@@ -26,11 +26,12 @@ void *count_pi(void *th_arg)
     long long int *number_in_circle = data->number_in_circle;
 
     long long int local_number_in_circle = 0;
-
+    unsigned int seed = (unsigned int)pthread_self();
+    
     for (int i = 0; i < number_of_tosses; ++i)
     {
-        double x = (double)(MAX - MIN) * rand() / (RAND_MAX + 1.0) + MIN;
-        double y = (double)(MAX - MIN) * rand() / (RAND_MAX + 1.0) + MIN;
+        double x = (double)(MAX - MIN) * rand_r(&seed) / (RAND_MAX + 1.0) + MIN;
+        double y = (double)(MAX - MIN) * rand_r(&seed) / (RAND_MAX + 1.0) + MIN;
         distance_squared = x * x + y * y;
         if (distance_squared <= 1)
             local_number_in_circle++;

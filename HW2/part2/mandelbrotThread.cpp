@@ -3,6 +3,9 @@
 
 #include "CycleTimer.h"
 
+
+static int current_row = 0;
+
 typedef struct
 {
     float x0, x1;
@@ -26,6 +29,39 @@ extern void mandelbrotSerial(
 // workerThreadStart --
 //
 // Thread entrypoint.
+// void workerThreadStart(WorkerArgs *const args)
+// {
+
+//     // TODO FOR PP STUDENTS: Implement the body of the worker
+//     // thread here. Each thread could make a call to mandelbrotSerial()
+//     // to compute a part of the output image. For example, in a
+//     // program that uses two threads, thread 0 could compute the top
+//     // half of the image and thread 1 could compute the bottom half.
+//     // Of course, you can copy mandelbrotSerial() to this file and 
+//     // modify it to pursue a better performance.
+
+
+//     double minThread = 1e30;
+//     double startTime = CycleTimer::currentSeconds();
+//     // part of height
+//     int part = args->height / (args->numThreads);
+//     int start = (args->threadId) * part;
+    
+//     // last thread
+//     if( (args->height % args->numThreads) != 0 && (args->threadId == args->numThreads) ) 
+//     {
+//         part = args->height - start;
+//     }
+    
+//     mandelbrotSerial(args->x0, args->y0, args->x1, args->y1, args->width, args->height, start, part, args->maxIterations, args->output);
+
+//     double endTime = CycleTimer::currentSeconds();
+//     minThread = std::min(minThread, endTime - startTime);
+
+//     printf("thread %d:[%.3f] ms\n", args->threadId, minThread * 1000);
+// }
+
+
 void workerThreadStart(WorkerArgs *const args)
 {
 
@@ -37,8 +73,21 @@ void workerThreadStart(WorkerArgs *const args)
     // Of course, you can copy mandelbrotSerial() to this file and 
     // modify it to pursue a better performance.
 
-    printf("Hello world from thread %d\n", args->threadId);
+
+    double minThread = 1e30;
+    double startTime = CycleTimer::currentSeconds();
+    // part of height
+    
+    
+    while(current_row != args->height)
+        mandelbrotSerial(args->x0, args->y0, args->x1, args->y1, args->width, args->height, current_row++, 1, args->maxIterations, args->output);
+
+    double endTime = CycleTimer::currentSeconds();
+    minThread = std::min(minThread, endTime - startTime);
+
+    printf("thread %d:[%.3f] ms\n", args->threadId, minThread * 1000);
 }
+
 
 //
 // MandelbrotThread --
@@ -63,6 +112,7 @@ void mandelbrotThread(
     std::thread workers[MAX_THREADS];
     WorkerArgs args[MAX_THREADS];
 
+
     for (int i = 0; i < numThreads; i++)
     {
         // TODO FOR PP STUDENTS: You may or may not wish to modify
@@ -84,6 +134,7 @@ void mandelbrotThread(
     // Spawn the worker threads.  Note that only numThreads-1 std::threads
     // are created and the main application thread is used as a worker
     // as well.
+    current_row = 0;
     for (int i = 1; i < numThreads; i++)
     {
         workers[i] = std::thread(workerThreadStart, &args[i]);
