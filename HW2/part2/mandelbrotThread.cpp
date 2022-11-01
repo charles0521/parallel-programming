@@ -76,16 +76,17 @@ void workerThreadStart(WorkerArgs *const args)
 
     double minThread = 1e30;
     double startTime = CycleTimer::currentSeconds();
-    // part of height
     
-    
-    while(current_row != args->height)
+    while(current_row != (int)args->height)
+    {
         mandelbrotSerial(args->x0, args->y0, args->x1, args->y1, args->width, args->height, current_row++, 1, args->maxIterations, args->output);
+    }
+        
 
     double endTime = CycleTimer::currentSeconds();
     minThread = std::min(minThread, endTime - startTime);
 
-    printf("thread %d:[%.3f] ms\n", args->threadId, minThread * 1000);
+    // printf("thread %d:[%.3f] ms\n", args->threadId, minThread * 1000);
 }
 
 
