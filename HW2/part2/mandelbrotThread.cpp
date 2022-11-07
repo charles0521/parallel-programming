@@ -77,9 +77,9 @@ void workerThreadStart(WorkerArgs *const args)
     double minThread = 1e30;
     double startTime = CycleTimer::currentSeconds();
     
-    while(current_row != (int)args->height)
+    for(unsigned int i=args->threadId; i<args->height; i=i+args->numThreads)
     {
-        mandelbrotSerial(args->x0, args->y0, args->x1, args->y1, args->width, args->height, current_row++, 1, args->maxIterations, args->output);
+        mandelbrotSerial(args->x0, args->y0, args->x1, args->y1, args->width, args->height, i, 1, args->maxIterations, args->output);
     }
         
 
