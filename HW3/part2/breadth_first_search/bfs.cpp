@@ -104,32 +104,64 @@ void bfs_top_down(Graph graph, solution *sol)
     }
 }
 
-void bfs_bottom_step(Graph g, vertex_set *frontier, int *distances, int front_id)
+// void bfs_bottom_step(Graph g, vertex_set *frontier, int *distances, int front_id)
+// {
+//     int next_count = 0;
+
+// #pragma omp parallel for reduction(+ : next_count)
+//     for (int node = 0; node < g->num_nodes; node++)
+//     {
+//         if (frontier->vertices[node] == NOT_VISITED_MARKER)
+//         {
+//             int start_edge = g->incoming_starts[node];
+//             int end_edge = (node == g->num_nodes - 1) ? g->num_edges : g->incoming_starts[node + 1];
+
+//             for (int neighbor = start_edge; neighbor < end_edge; neighbor++)
+//             {
+//                 int neighbor_node = g->incoming_edges[neighbor];
+//                 if (frontier->vertices[neighbor_node] == front_id)
+//                 {
+//                     distances[node] = distances[neighbor_node] + 1;
+//                     frontier->vertices[node] = front_id + 1;
+//                     next_count = next_count + 1;
+//                     break;
+//                 }
+//             }
+//         }
+//     }
+//     frontier->count = next_count;
+// }
+
+void bottom_up_step(
+    Graph g,
+    vertex_set* frontier,
+    int *distances,
+    int frontier_id)
 {
-    int next_count = 0;
+    int next_frontier_cnt = 0;
 
-#pragma omp parallel for reduction(+ : next_count)
-    for (int node = 0; node < g->num_nodes; node++)
+    #pragma omp parallel
     {
-        if (frontier->vertices[node] == NOT_VISITED_MARKER)
-        {
-            int start_edge = g->incoming_starts[node];
-            int end_edge = (node == g->num_nodes - 1) ? g->num_edges : g->incoming_starts[node + 1];
+	#pragma omp for reduction(+:next_frontier_cnt)
+	for (int i=0; i < g->num_nodes; i++) {
+    	    if (frontier->vertices[i] == NOT_VISITED_MARKER){
+    	        int start_edge = g->incoming_starts[i];
+    	        int end_edge = (i == g->num_nodes-1) ? g->num_edges : g->incoming_starts[i+1];
 
-            for (int neighbor = start_edge; neighbor < end_edge; neighbor++)
-            {
-                int neighbor_node = g->incoming_edges[neighbor];
-                if (frontier->vertices[neighbor_node] == front_id)
-                {
-                    distances[node] = distances[neighbor_node] + 1;
-                    frontier->vertices[node] = front_id + 1;
-                    next_count = next_count + 1;
-                    break;
-                }
-            }
-        }
+    	        for (int neighbor = start_edge; neighbor < end_edge; neighbor++) {
+		    int neighbor_node = g->incoming_edges[neighbor];
+
+		    if (frontier->vertices[neighbor_node] == frontier_id){
+			distances[i] = distances[neighbor_node] + 1;
+			frontier->vertices[i] = frontier_id + 1;
+    	    	      	next_frontier_cnt++;
+    	    	      	break;
+		    }
+    	        }
+    	    }
+    	}
     }
-    frontier->count = next_count;
+    frontier->count += next_frontier_cnt;
 }
 
 void bfs_bottom_up(Graph graph, solution *sol)
@@ -157,7 +189,8 @@ void bfs_bottom_up(Graph graph, solution *sol)
 
         vertex_set_clear(frontier);
 
-        bfs_bottom_step(graph, frontier, sol->distances, front_id);
+        // bfs_bottom_step(graph, frontier, sol->distances, front_id);
+        bottom_up_step(graph, frontier, sol->distances, front_id);
         front_id++;
 #ifdef VERBOSE
         double end_time = CycleTimer::currentSeconds();
@@ -220,7 +253,8 @@ void bfs_hybrid(Graph graph, solution *sol)
         }
         else
         {
-            bfs_bottom_step(graph, frontier, sol->distances, front_id);
+            // bfs_bottom_step(graph, frontier, sol->distances, front_id);
+            bottom_up_step(graph, frontier, sol->distances, front_id);
         }
 
         front_id++;
